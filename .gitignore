@@ -1,0 +1,70 @@
+# Ignore compiled Python files
+*.pyc
+__pycache__/
+*.pyo
+
+# Ignore the virtual environment directory
+env/
+venv/
+.virtualenv/
+*.venv/
+
+# Ignore local development settings
+*.sqlite3
+*.db
+*.sqlite
+db.sqlite3
+
+# Ignore generated media files
+media/
+
+# Ignore static files collected by Django
+staticfiles/
+
+# Ignore log files
+*.log
+
+# Ignore IDE and text editor-specific files
+.vscode/
+.idea/
+*.sublime*
+*.swp
+*.swo
+
+# Ignore macOS specific files
+.DS_Store
+
+# # Ignore sensitive or private files containing secret keys and credentials
+# secret_key.py
+# settings.py
+
+# Ignore pipenv and poetry lock files
+Pipfile.lock
+poetry.lock
+
+# Ignore compiled JavaScript and CSS files
+*.js
+*.css
+*.scss
+*.sass
+
+# Ignore database dump files
+*.dump
+
+# Ignore compiled files from other languages
+*.class
+*.jar
+*.war
+*.pyd
+*.dll
+*.exe
+
+# Ignore temporary files
+*.tmp
+*.temp
+
+# Ignore node_modules directory
+node_modules/
+
+# Ignore virtual environment for poetry
+.pytest_cache/
