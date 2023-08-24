@@ -2,16 +2,17 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator
+from social_network.models import Timestamped
 from user.utils import generate_secure_password
 from datetime import date
 
-class UserProfile(models.Model):
+class UserProfile(Timestamped):
     GENDER_CHOICES = [('Male', 'Male'),('Female', 'Female'),('Other', 'Other')]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     date_of_birth = models.DateField(null=True, blank=True)
-    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True)
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True)
     interests = models.TextField(blank=True)
     about = models.TextField(blank=True)
 
@@ -52,3 +53,14 @@ class UserProfile(models.Model):
     def __str__(self):
         return self.email
     
+
+class BlockedProfile(Timestamped):
+    profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE, related_name='blocked_user')
+    blocked_profile = models.ManyToManyField(UserProfile, related_name='blocked_by')
+
+    @property
+    def blocked_profile_ids(self):
+        return self.blocked_profile.values_list("id", flat=True)
+
+    def __str__(self):
+        return self.user.username
