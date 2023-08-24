@@ -6,7 +6,7 @@ from user.utils import generate_secure_password
 from datetime import date
 
 class UserProfile(models.Model):
-    GENDER_CHOICES = [('M', 'Male'),('F', 'Female'),('O', 'Other')]
+    GENDER_CHOICES = [('Male', 'Male'),('Female', 'Female'),('Other', 'Other')]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
@@ -16,17 +16,16 @@ class UserProfile(models.Model):
     about = models.TextField(blank=True)
 
     def clean(self, *args, **kwargs):
-        if self.date_of_birth:
-            min_age = 18
-            age = (date.today() - self.date_of_birth).days // 365
-            if age < min_age:
-                raise ValidationError(f"You must be at least {min_age} years old.")
-
         if not self.email:
             raise ValidationError("Email field is mandatory for registration")
         if self.email:
             email_validator = EmailValidator()
             email_validator(self.email)
+        if self.date_of_birth:
+            min_age = 18
+            age = (date.today() - self.date_of_birth).days // 365
+            if age < min_age:
+                raise ValidationError(f"You must be at least {min_age} years old.")
                 
     def save(self, *args, **kwargs):
         if not self.id:
