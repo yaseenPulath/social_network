@@ -1,13 +1,13 @@
 from django.db import models
 from django.db.models import Q
 from django.contrib.auth.models import UserManager, AbstractUser, Group, Permission
-from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator
 from social_network.models import Timestamped
-from user.utils import generate_secure_password
+from user.utils import generate_secure_password, validate_user_age
 from django.contrib.auth.models import User
 from datetime import date
 from django.utils.translation import gettext as _
+
 
 class CustomUserManager(UserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -20,7 +20,7 @@ class CustomUserManager(UserManager):
         return user
 
 class UserProfileManager(models.Manager):
-    def create_userprofile_with_user(self, email, password, **kwargs):
+    def create_userprofile_with_user(self, email, password=None, **kwargs):
         if not email:
             raise ValueError("Email is mandatory for registration")
         is_auto_generated_password = False
@@ -73,16 +73,12 @@ class UserProfile(Timestamped):
     objects = UserProfileManager()
 
     def clean(self, *args, **kwargs):
-        if not self.email:
-            raise ValidationError("Email field is mandatory for registration")
-        if self.email:
-            email_validator = EmailValidator()
-            email_validator(self.email)
         if self.date_of_birth:
-            min_age = 18
-            age = (date.today() - self.date_of_birth).days // 365
-            if age < min_age:
-                raise ValidationError(f"You must be at least {min_age} years old.")
+            validate_user_age(self.date_of_birth)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
     
     @property
     def friend_list(self):
@@ -94,7 +90,8 @@ class UserProfile(Timestamped):
     @property
     def full_name(self):
         return f'{self.first_name} {self.last_name}'.strip()
-    
+
+#TO DO
 class BlockedProfile(Timestamped):
     profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE, related_name='blocked_user')
     blocked_profile = models.ManyToManyField(UserProfile, related_name='blocked_by')

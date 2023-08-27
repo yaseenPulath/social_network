@@ -25,7 +25,7 @@ class UserRegistrationView(APIView):
                 user = user_profile.user
             except Exception as e:
                 # logger
-                return Response({"message": "User Already exists."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"status": "Failure", "message": "User Already exists."}, status=status.HTTP_400_BAD_REQUEST)
             serializer = UserRegistrationSerializer(user)
             response_data = {
                 "status": "Success",
@@ -103,23 +103,23 @@ class UserOperationsViewSet(ViewSet):
     def search_users(self, request):
         email = request.query_params.get('email', '')
         name = request.query_params.get('name', '')
+        request_user = request.user
 
         queryset = UserProfile.objects.none()
         is_exact_match = True
         if email:
-            queryset = UserProfile.objects.filter(user__email=email)
+            queryset = UserProfile.objects.filter(user__email=email).exclude(user__id=request_user.id)
             if not queryset.exists():
                 is_exact_match = False
-                queryset = UserProfile.objects.filter(user__email__icontains=email)
+                queryset = UserProfile.objects.filter(user__email__icontains=email).exclude(user__id=request_user.id)
         elif name:
-            queryset = UserProfile.objects.filter(user_name=name)
+            queryset = UserProfile.objects.filter(user_name=name).exclude(user__id=request_user.id)
             if not queryset.exists():
                 is_exact_match = False
-                queryset = UserProfile.objects.filter(user_name__icontains=name)
+                queryset = UserProfile.objects.filter(user_name__icontains=name).exclude(user__id=request_user.id)
         if is_exact_match:
             instance = queryset.last()
             serializer = self.get_serializer(instance)
-    
         else:
             paginator = self.pagination_class()
             paginated_queryset = paginator.paginate_queryset(queryset, request)
@@ -131,22 +131,24 @@ class UserOperationsViewSet(ViewSet):
 class FriendRequestViewSet(ViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-
+    pagination_class = PageNumberPagination
+    pagination_class.page_size = 10
+    pagination_class.max_page_size = 100
 
     @action(detail=True, methods=['post'], url_path='send-request', throttle_classes=[UserRateThrottle])
     def send_request(self, request, pk=None):
         from_user = request.user.userprofile
         to_user = UserProfile.objects.get(id=pk)
         if from_user.has_friendship_with(to_user):
-            return Response({"message": "You are already connected with this user as a friend."},
+            return Response({"status": "Failure", "message": "You are already connected with this user as a friend."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         if FriendRequest.has_open_friend_request(from_user, to_user):
-            return Response({"message": "There is already an open friend request between you and this user."},
+            return Response({"status": "Failure", "message": "There is already an open friend request between you and this user."},
                 status=status.HTTP_400_BAD_REQUEST
             ) 
         friend_request = FriendRequest.objects.create(from_user=from_user, to_user=to_user)
-        return Response({"message": "Friend request sent successfully."}, status=status.HTTP_201_CREATED)
+        return Response({"status": "Success", "message": "Friend request sent successfully."}, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'], url_path='accept-request')
     def accept_request(self, request, pk=None):
@@ -156,10 +158,10 @@ class FriendRequestViewSet(ViewSet):
             friend_request = FriendRequest.objects.get(from_user=from_user, to_user=to_user, status="sent")
         except Exception as e:
             # loger
-            return Response({"message": "Friend Request Not Found"},status = status.HTTP_400_BAD_REQUEST)
+            return Response({"status": "Failure", "message": "Friend Request Not Found"},status = status.HTTP_400_BAD_REQUEST)
         friend_request.status = "accepted"
         friend_request.save()
-        return Response({"message": "Friend request accepted successfully.."}, status=status.HTTP_202_ACCEPTED)
+        return Response({"status": "Success", "message": "Friend request accepted successfully.."}, status=status.HTTP_202_ACCEPTED)
 
     @action(detail=True, methods=['post'], url_path='reject-request')
     def reject_request(self, request, pk=None):
@@ -170,23 +172,29 @@ class FriendRequestViewSet(ViewSet):
             friend_request = FriendRequest.objects.get(from_user=from_user, to_user=to_user, status="sent")
         except Exception as e:
             # logger
-            return Response({"message": "Friend Request Not Found"},status = status.HTTP_400_BAD_REQUEST)
+            return Response({"status": "Failure", "message": "Friend Request Not Found"},status = status.HTTP_400_BAD_REQUEST)
         friend_request.status = "rejected"
         friend_request.save()
-        return Response({"message": "Friend request rejected successfully."}, status=status.HTTP_202_ACCEPTED)
+        return Response({"status": "Success", "message": "Friend request rejected successfully."}, status=status.HTTP_202_ACCEPTED)
 
     @action(detail=False, methods=["get"], url_path="sent-accepted")
     def sent_accepted_requests(self, request):
         user = request.user.userprofile 
         accepted_friend_requests = FriendRequest.objects.filter(from_user=user, status="accepted", active=False)
-        serializer = SentAcceptedFriendRequestSerializer(accepted_friend_requests, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(accepted_friend_requests, request)
+        serializer = SentAcceptedFriendRequestSerializer(paginated_queryset, many=True)
+        return paginator.get_paginated_response(serializer.data)
     
     @action(detail=False, methods=["get"], url_path="received-pending")
     def received_pending_requests(self, request):
         user = request.user.userprofile
         pending_friend_requests = FriendRequest.objects.filter(to_user=user, status="sent", active=True)
-        serializer = ReceivedPendingRequestSerializer(pending_friend_requests, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(pending_friend_requests, request)
+        serializer = ReceivedPendingRequestSerializer(paginated_queryset, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 #TO DO: UNFRIEND, UNFRIEND AND BLOCK 
