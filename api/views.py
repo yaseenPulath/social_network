@@ -38,7 +38,7 @@ class UserRegistrationView(APIView):
                 token = generate_jwt_token(payload)
                 response_data['token'] =  token
             return Response(response_data, status=status.HTTP_201_CREATED)
-        return Response({"message": "Email is mandatory for registration"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status": "Failure", "message": "Email is mandatory for registration"}, status=status.HTTP_400_BAD_REQUEST)
 
 class UserLoginView(APIView):
     def post(self, request):
@@ -48,42 +48,63 @@ class UserLoginView(APIView):
         if user:
             payload = JWTPayloadSerializer(user).data
             token = generate_jwt_token(payload)
+            serializer = UserRegistrationSerializer(user)
             response_data = {
+                "status": "Success",
                 'message': 'User logged in successfully.',
                 'token': token,
+                **serializer.data
             }
             return Response(response_data, )
         else:
             return Response(
-                {"message": "Invalid credentials. Please try again."},
+                {"status": "Failure", "message": "Invalid credentials. Please try again."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
 class UserOperationsViewSet(ViewSet):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [JWTPermission]
+    permission_classes = [IsAuthenticated]
     queryset = UserProfile.objects.all()
     pagination_class = PageNumberPagination
     pagination_class.page_size = 10
     pagination_class.max_page_size = 100
 
     def get_serializer(self, *args, **kwargs):
-        if self.action == 'search_users':
+        if self.action in ['search_users', 'update_profile']:
             return UserProfileSerializer(*args, **kwargs)
         return super().get_serializer(*args, **kwargs)
 
-    @action(detail=True, methods=['put'], url_path='update-profile')
-    def update_profile(self, request, pk=None):
-        # TO DO:  Handle profile update logic
-        return Response("Profile updated successfully.")
+    @action(detail=False, methods=['patch'], url_path='update-profile')
+    def update_profile(self, request):
+        data = self.request.data
+        user_profile = request.user.userprofile
+        serializer = self.get_serializer(user_profile, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"status": "Success", "message": "Profile updated successfully.", **serializer.data})
+        return Response({"status": "Failure", "Errors": serializer.errors, "message": "Please provide a valid data"})
 
-    @action(detail=True, methods=['patch'], url_path='change-password')
-    def change_password(self, request, pk=None):
-        # TO DO: Handle password change logic
-        return Response("Password changed successfully.")
+
+        # TO DO:  Handle profile update logic
+
+    @action(detail=False, methods=['patch'], url_path='change-password')
+    def change_password(self, request   ):
+        data = request.data
+        new_password = data.get("password")
+        if new_password:
+            user = request.user
+            user.set_password(new_password)
+            user.save()
+            return Response({"status": "Success", "message": "Password changed successfully."})
+        else:
+            return Response({
+                "status": "Failure",
+                "message": "password can't me empty"
+            }, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=True, methods=['get'], url_path='search-users', permission_classes=[IsAuthenticated])
-    def search_users(self, request, pk=None):
+    @action(detail=False, methods=['get'], url_path='search-users', permission_classes=[IsAuthenticated])
+    def search_users(self, request):
         email = request.query_params.get('email', '')
         name = request.query_params.get('name', '')
 
