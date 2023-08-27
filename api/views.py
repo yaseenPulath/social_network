@@ -30,7 +30,7 @@ class UserRegistrationView(APIView):
             serializer = UserRegistrationSerializer(user)
             response_data = {
                 "status": "Success",
-                'message': 'User registered successfully. Please update your password within 24 hours.' if random_password_flag else 'User registered successfully.',
+                'message': 'User registered successfully. Please update your password within 24 hours.' if user_profile.is_auto_generated_password else 'User registered successfully.',
                 **serializer.data
             }
             if user_profile.is_auto_generated_password:
