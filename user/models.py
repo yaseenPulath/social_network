@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Q
+from django.db import IntegrityError
 from django.contrib.auth.models import UserManager, AbstractUser, Group, Permission
 from django.core.validators import EmailValidator
 from social_network.models import Timestamped
@@ -20,21 +21,24 @@ class CustomUserManager(UserManager):
         return user
 
 class UserProfileManager(models.Manager):
-    def create_userprofile_with_user(self, email, password=None, **kwargs):
+    def create_userprofile_with_user(self, email, *args, **kwargs):
         if not email:
-            raise ValueError("Email is mandatory for registration")
-        is_auto_generated_password = False
-        if not password:
-            is_auto_generated_password = True
-            password = generate_secure_password()
+            raise ValueError("Email is mandatory for registration.")
+        user = User.objects.filter(email=email)
+        if user.exists():
+            if user.filter(is_registration_completed=True).exists():
+                raise IntegrityError("Email is already taken.")
+            else:
+                return UserProfile.objects.get(user_id=user.last().id)
+        password = generate_secure_password()
         user = User.objects.create_user(email=email, password=password)
-        user_profile = self.model(user=user, **kwargs)
-        user_profile.is_auto_generated_password = is_auto_generated_password
+        user_profile = self.model(user=user)
         user_profile.save()
         return user_profile
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
+    is_registration_completed = models.BooleanField(default=False)
     username = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     groups = models.ManyToManyField(
         Group,

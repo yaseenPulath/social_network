@@ -12,31 +12,33 @@ from api.serializers import JWTPayloadSerializer, UserRegistrationSerializer, Se
     ReceivedPendingRequestSerializer, UserProfileSerializer
 from user.jwt_utils import generate_jwt_token
 from django.contrib.auth import authenticate
+from django.db import IntegrityError
 from api.authentication import JWTAuthentication
 from friends.models import FriendRequest
 
 class UserRegistrationView(APIView):
     def post(self, request):
         email = request.data.get('email')
-        password = request.data.get('password')
         if email:
             try:
-                user_profile = UserProfile.objects.create_userprofile_with_user(email=email, password=password)
+                user_profile = UserProfile.objects.create_userprofile_with_user(email=email)
                 user = user_profile.user
-            except Exception as e:
-                # logger
-                return Response({"status": "Failure", "message": "User Already exists."}, status=status.HTTP_400_BAD_REQUEST)
-            serializer = UserRegistrationSerializer(user)
-            response_data = {
-                "status": "Success",
-                'message': 'User registered successfully. Please update your password within 24 hours.' if user_profile.is_auto_generated_password else 'User registered successfully.',
-                **serializer.data
-            }
-            if user_profile.is_auto_generated_password:
+                serializer = UserRegistrationSerializer(user)
                 payload = JWTPayloadSerializer(user).data
                 token = generate_jwt_token(payload)
-                response_data['token'] =  token
-            return Response(response_data, status=status.HTTP_201_CREATED)
+                data = serializer.data
+                data['token'] = token
+                response_data = {
+                    "status": "Success",
+                    'message': 'User registered successfully. please update password to avoid security risks.',
+                    "detail": data
+                }
+                return Response(response_data, status=status.HTTP_201_CREATED)
+            except IntegrityError as e:
+                return Response({"status": "Failure", "message": e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                # logger
+                return Response({"status": "Failure", "message": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"status": "Failure", "message": "Email is mandatory for registration"}, status=status.HTTP_400_BAD_REQUEST)
 
 class UserLoginView(APIView):
