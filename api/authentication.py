@@ -1,6 +1,5 @@
 from rest_framework.authentication import BaseAuthentication
 from rest_framework import exceptions
-from cryptography.hazmat.primitives import serialization
 import jwt
 
 from django.conf import settings

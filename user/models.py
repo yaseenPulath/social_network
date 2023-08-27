@@ -40,14 +40,14 @@ class User(AbstractUser):
         Group,
         verbose_name=_('groups'),
         blank=True,
-        related_name='custom_user_set',  # Change this to a unique name
+        related_name='custom_user_set',
         related_query_name='custom_user'
     )
     user_permissions = models.ManyToManyField(
         Permission,
         verbose_name=_('user permissions'),
         blank=True,
-        related_name='custom_user_set',  # Change this to a unique name
+        related_name='custom_user_set',
         related_query_name='custom_user'
     )
 
@@ -58,23 +58,6 @@ class User(AbstractUser):
         return self.email
     
     objects = CustomUserManager()
-
-    # class Meta:
-    #     swappable = 'AUTH_USER_MODEL'
-
-# CustomUser._meta.get_field('groups').related_query_name = 'custom_user_groups'
-# CustomUser._meta.get_field('user_permissions').related_query_name = 'custom_user_permissions'
-
-
-# class User(AbstractBaseUser):
-#     email = models.EmailField(unique=True, db_index=True)
-
-
-#     USERNAME_FIELD = 'email'
-#     objects = UserManager()
-
-#     def __str__(self):
-#         return self.email
 
 class UserProfile(Timestamped):
     GENDER_CHOICES = [('Male', 'Male'),('Female', 'Female'),('Other', 'Other')]

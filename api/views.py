@@ -1,20 +1,19 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ViewSet, ModelViewSet
+from rest_framework.viewsets import ViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.pagination import PageNumberPagination
-from user.models import User, UserProfile
+from user.models import UserProfile
 from user.utils import generate_secure_password
 from api.serializers import JWTPayloadSerializer, UserRegistrationSerializer, SentAcceptedFriendRequestSerializer, \
     ReceivedPendingRequestSerializer, UserProfileSerializer
 from user.jwt_utils import generate_jwt_token
 from django.contrib.auth import authenticate
 from api.authentication import JWTAuthentication
-from api.permissions import JWTPermission
-from friends.models import FriendRequest, Friendship
+from friends.models import FriendRequest
 
 class UserRegistrationView(APIView):
     def post(self, request):
@@ -84,9 +83,6 @@ class UserOperationsViewSet(ViewSet):
             serializer.save()
             return Response({"status": "Success", "message": "Profile updated successfully.", **serializer.data})
         return Response({"status": "Failure", "Errors": serializer.errors, "message": "Please provide a valid data"})
-
-
-        # TO DO:  Handle profile update logic
 
     @action(detail=False, methods=['patch'], url_path='change-password')
     def change_password(self, request   ):
@@ -194,4 +190,3 @@ class FriendRequestViewSet(ViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 #TO DO: UNFRIEND, UNFRIEND AND BLOCK 
-#list need JWTPermission

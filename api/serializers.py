@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from user.models import UserProfile, User
-from friends.models import FriendRequest, Friendship
+from friends.models import FriendRequest
 from datetime import datetime, timedelta as td
 from rest_framework.exceptions import ErrorDetail
 
@@ -30,9 +30,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
     password = serializers.CharField(source="user.password", write_only=True, required=False)
     class Meta:
         model = UserProfile
-        fields = ["user_id", "username", "email", "password", "date_of_birth", "gender", "interests", "about"]
+        fields = [
+            "user_id", "username", "email", "password", "date_of_birth",
+            "gender", "interests", "about"
+        ]
         extra_kwargs = {
-            'gender': {'error_messages': {'invalid_choice': 'Valid choices are: Male, Female, Other.'}}
+            'gender': {
+                'error_messages': {
+                    'invalid_choice': 'Valid choices are: Male, Female, Other.'
+                }
+            }
         }
 
     def update(self, instance, validated_data):
@@ -57,7 +64,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
         if email:
             if email != self.instance.user.email:
                 if User.objects.filter(email=email).exists():
-                    raise serializers.ValidationError({"email": ErrorDetail("Email is already taken.", code="unique")})
+                    raise serializers.ValidationError(
+                        {"email": ErrorDetail("Email is already taken.", code="unique")}
+                    )
         return data
 
 

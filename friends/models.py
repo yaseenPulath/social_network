@@ -26,18 +26,17 @@ class FriendRequest(Timestamped):
         return FriendRequest.objects.filter(Q(from_user=userprofile)|Q(to_user=userprofile)).exclude(
             active = False
         )
-    
+
     @classmethod
     def get_open_friend_requests(cls, from_user, to_user):
         return FriendRequest.objects.filter(
             Q(from_user=from_user, to_user=to_user, status="sent", active=True) |
             Q(from_user=to_user, to_user=from_user, status="sent", active=True)
         )
-    
+
     @classmethod
     def has_open_friend_request(cls, from_user, to_user):
         return FriendRequest.get_open_friend_requests(from_user, to_user).exists()
-
 
     def save(self, *args, **kwargs):
         if self.status in ["accepted", "rejected"]:

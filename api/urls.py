@@ -1,5 +1,6 @@
 from django.urls import path, include
-from api.views import UserRegistrationView, UserLoginView, UserOperationsViewSet, FriendRequestViewSet
+from api.views import UserRegistrationView, UserLoginView,\
+    UserOperationsViewSet, FriendRequestViewSet
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter(trailing_slash=False)
