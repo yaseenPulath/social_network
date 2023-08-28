@@ -100,7 +100,7 @@ class UserOperationsViewSet(ViewSet):
         serializer = self.get_serializer(user_profile, data=data)
         if serializer.is_valid():
             serializer.save()
-            return Response({"status": "Success", "message": "Profile updated successfully.", **serializer.data})
+            return Response({"status": "Success", "message": "Profile updated successfully.", "detail": serializer.data})
         return Response({"status": "Failure", "Errors": serializer.errors, "message": "Please provide a valid data"})
 
 
