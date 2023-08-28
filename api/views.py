@@ -57,8 +57,7 @@ class UserLoginView(APIView):
             response_data = {
                 "status": "Success",
                 'message': 'User logged in successfully.',
-                'token': token,
-                **serializer.data
+                "detail": {'token': token, **serializer.data}
             }
             return Response(response_data, )
         else:
@@ -104,8 +103,8 @@ class UserOperationsViewSet(ViewSet):
         serializer = self.get_serializer(user_profile, data=data)
         if serializer.is_valid():
             serializer.save()
-            return Response({"status": "Success", "message": "Profile updated successfully.", "detail": serializer.data})
-        return Response({"status": "Failure", "Errors": serializer.errors, "message": "Please provide a valid data"})
+            return Response({"status": "Success", "message": "Profile updated successfully.", "detail": serializer.data}, status=status.HTTP_200_OK)
+        return Response({"status": "Failure", "Errors": serializer.errors, "message": "Please provide a valid data"}, status=status.HTTP_400_BAD_REQUEST)
 
 
     def partial_update(self, request, pk):
@@ -176,7 +175,12 @@ class FriendRequestViewSet(ViewSet):
         user_id = data.get("user_id")
         if user_id:
             from_user = request.user.userprofile
-            to_user = UserProfile.objects.get(id=user_id)
+            try:
+                to_user = UserProfile.objects.get(id=user_id)
+            except UserProfile.DoesNotExist:
+                return Response({"status": "Failure", "message": "User Not Found."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             if from_user.has_friendship_with(to_user):
                 return Response({"status": "Failure", "message": "You are already connected with this user as a friend."},
                     status=status.HTTP_400_BAD_REQUEST

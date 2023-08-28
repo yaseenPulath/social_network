@@ -1,0 +1,25 @@
+services:
+  backend:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    volumes:
+      - .:/srv/www/social_network
+    ports:
+      - 8000:3000
+    depends_on:
+      - db
+    command: sh -c "python manage.py migrate --noinput && sleep 10 && python manage.py runserver 0.0.0.0:3000"
+
+  db:
+    image: mysql:8.0.23
+    restart: always
+    environment:
+      MYSQL_DATABASE: socialnetwork
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_USER: root
+    volumes:
+      - .local/socialnetwork/mysql/:/var/lib/mysql

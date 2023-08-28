@@ -68,3 +68,5 @@ node_modules/
 
 # Ignore virtual environment for poetry
 .pytest_cache/
+
+.local/*

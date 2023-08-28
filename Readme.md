@@ -1,42 +1,40 @@
 # Social Networking Application API
 
-Welcome to the Social Networking Application API documentation. This repository contains the implementation of a social networking application's API using Django Rest Framework. The API offers a range of functionalities for user management and friend requests. Below are the details of the implemented functionalities and the overall structure of the project.
+This project implements a social networking application API using Django Rest Framework. The API offers a range of functionalities for user management and friend requests. Below are the details of the implemented functionalities and the overall structure of the project.
 
 ## Getting Started
 
 To set up the project locally, follow these steps:
 
-1. Clone the repository: `git clone <repository-url>`
-2. Navigate to the project directory: `cd social_network`
-3. Create a Virtual Environment
-
-    It's recommended to use a virtual environment to isolate project dependencies. You can create a virtual environment using the following command:
-
-   ```shell
-   python -m venv env
-   ```
-
-    Activate the virtual environment:
-
-    On Windows:
+1. Clone the repository: 
     ```shell
-    env\Scripts\activate
+    git clone <repository-url>
     ```
-    On macOS and Linux:
-    ```shell
-    source env/bin/activate
+2. Navigate to the project directory: 
+    ```bash
+    cd social_network
     ```
-3. Install the required dependencies: `pip install -r requirements.txt`
-4. Apply database migrations: `python manage.py migrate`
-5. Run the development server: `python manage.py runserver`
+3. install docker
+
+    `https://docs.docker.com/engine/install/`
+
+4. to start the development process run the below command
+
+    ```bash
+    docker compose -f docker.compose.development.yml up --build backend
+    ```
 
 ## Functionality Implemented
 
 ### User Signup and Login
 
-- Users can sign up with their email. A random password is generated and associated with the user's account at the backend. An authentication token is returned upon successful signup, which is valid for 24 hours.
-- With the help of the authentication token, users can change their password to a known password.
-
+- **Quick Signup:** Users can sign up with their email, and a random password is generated for their account at the backend.
+- **Token Access:** After successful signup, users receive a 24-hour valid authentication token for application access.
+- **Token Expiry:** If the token expires, users can still use the signup API to get a new token for the next 24 hours.
+- **User-Friendly:** This prevents frustration if users return after a while and find their token expired.
+- **Security Boost:** To complete registration, users are prompted to change their password using the "change_password" endpoint as a response to the registration api.
+- **Registration Completed:** After password change, users cannot re-register with the same email; they can use the login API for a valid token.
+- **Security & Satisfaction:** This strategy ensures robust security and maintains a seamless user experience.
 ### Changing Password
 
 - Users can change their account password using the JWT token received during signup or login.
@@ -82,7 +80,11 @@ The project is structured into several components:
 
 ### User Registration
 
-**URL Endpoint**: `http://localhost:8000/api/user/register`
+**API Endpoint**: 
+
+```bash
+POST http://localhost:8000/api/user/register
+```
 
 **Description**: This endpoint allows users to register using their email. A random password is generated and associated with the user's account at the backend. An authentication token is returned upon successful signup, which is valid for 24 hours.
 
@@ -90,30 +92,36 @@ The project is structured into several components:
 
 ```json
 {
-    "email": "example@example.com"
+    "email": "user@example.com"
 }
 ```
-**Sample Success Response**:
+**Sample Success Response (Status Code: 201 Created)**:
 ```json
 {
     "status": "Success",
-    "message": "User registered successfully. Please update your password within 24 hours.",
-    "id": 4,
-    "email": "example@example.com",
-    "token": "..."
+    "message": "User registered successfully. Please update password to avoid security risks.",
+    "detail": {
+        "id": 123,
+        "email": "user@example.com",
+        "token": "sample_token_here"
+    }
 }
+
 ```
-**Sample Failure Response**:
+**Sample Failure Response (Status Code: 400 Bad Request)**:
 
 ```json
 {
     "status": "Failure",
-    "message": "User Already exists."
+    "message": "Email is already taken."
 }
 ```
 ### Change User Password
 
-**URL Endpoint**: `http://localhost:8000/api/user/change-password`
+**API Endpoint**:
+ ```bash
+ PATCH http://localhost:8000/api/user/profile/change-password
+ ```
 
 **Description**: This endpoint allows users to change their account password using the JWT token received during signup or login. This new password will allow users to log in to the system after the authentication token has expired.
 
@@ -121,17 +129,17 @@ The project is structured into several components:
 
 ```json
 {
-    "password": "testPassword"
+    "password": "newPassword"
 }
 ```
-**Sample Success Response**:
+**Sample Success Response (Status Code: 200 OK)**:
 ```json
 {
     "status": "Success",
     "message": "Password changed successfully."
 }
 ```
-**Sample Failure Response**:
+**Sample Failure Response (Status Code: 400 Bad Request)**:
 
 ```json
 {
@@ -141,7 +149,10 @@ The project is structured into several components:
 ```
 ### User Login
 
-**URL Endpoint**: `http://localhost:8000/api/user/login`
+**API Endpoint**: 
+```bash
+POST http://localhost:8000/api/user/login
+```
 
 **Description**: This endpoint enables users to log in using their email and the password. Upon successful login, a JWT token is provided, which is valid for 24 hours.
 
@@ -149,21 +160,24 @@ The project is structured into several components:
 
 ```json
 {
-    "email": "yaseen@gmail.com",
-    "password": "newpassword"
+    "email": "user@example.com",
+    "password": "password"
 }
 ```
-**Sample Success Response**:
+**Sample Success Response (Status Code: 200 OK)**:
 ```json
 {
     "status": "Success",
     "message": "User logged in successfully.",
-    "token": "...",
-    "id": 1,
-    "email": "yaseen@gmail.com"
+    "detail": {
+        "token": "sample_token_here",
+        "id": 1,
+        "email": "user@example.com"
+    }
 }
+
 ```
-**Sample Failure Response**:
+**Sample Failure Response (Status Code: 400 Bad Request)**:
 
 ```json
 {
@@ -174,7 +188,10 @@ The project is structured into several components:
 
 ### Update Profile
 
-**URL Endpoint**: `http://localhost:8000/api/user/update-profile`
+**API Endpoint**: 
+```bash
+PATCH http://localhost:8000/api/user/profile/update-profile
+```
 
 **Description**: This endpoint enables users to update their profile information. 
 
@@ -190,21 +207,23 @@ The project is structured into several components:
     "about": "Developer"
 }
 ```
-**Sample Success Response**:
+**Sample Success Response (Status Code: 200 OK)**:
 ```json
 {
     "status": "Success",
     "message": "Profile updated successfully.",
-    "user_id": 1,
-    "username": "yaseen",
-    "email": "yaseen3@gmail.com",
-    "date_of_birth": "1996-04-17",
-    "gender": "Male",
-    "interests": "coding",
-    "about": "Developer"
+    "detail": {
+        "user_id": 1,
+        "username": "yaseen",
+        "email": "yaseen@gmail.com",
+        "date_of_birth": "1996-04-17",
+        "gender": "Male",
+        "interests": "coding",
+        "about": "Developer"
+    }
 }
 ```
-**Sample Failure Response**:
+**Sample Failure Response (Status Code: 400 Bad Request)**:
 
 ```json
 {
@@ -220,45 +239,60 @@ The project is structured into several components:
 
 ### Search for Other Profiles
 
-**URL Endpoint**: `http://localhost:8000/api/user/search-users?email=gmail`
+**API Endpoint**:
+ ```bash
+GET http://localhost:8000/api/user/profile/search?email=gmail
+```
 
 **Description**: This endpoint allows users to search for other user profiles using their email or name as a search keyword. Matching profiles are returned in the response. Pagination is implemented with a page size of 10, so the API response will include up to 10 records per page.
 
-**Sample Response**:
+**Sample Response (Status Code: 200 OK)**:
 ```json
 {
     "count": 15,
-    "next": "http://localhost:8000/api/user/search-users?email=gmail&page=2",
+    "next": "sample_next_url",
     "previous": null,
     "results": [
         {
             "user_id": 3,
-            "username": "Bertram",
-            "email": "Bertram.Deckow37@gmail.com",
-            "date_of_birth": null,
-            "gender": null,
-            "interests": null,
-            "about": null
-        },
+            "username": "sample_username",
+            "interests": "sample_interests",
+            "about": "sample_about"
+        }
         ...
-    ]
+    ],
+    "is_exact_match": false
 }
+
 ```
 
 ### Send Friend Request
 
-**URL Endpoint**: `http://localhost:8000/api/friend-request/1/send-request`
+**API Endpoint**: 
+```bash
+POST http://localhost:8000/api/friend-request
+```
 
 **Description**: This endpoint lets users send friend requests to other users.
 
-**Sample Success Response**:
+**Sample Request Body**:
+
+```json
+{
+    "user_id" : 6
+}
+```
+**Sample Success Response (Status Code: 201 Created)**:
 ```json
 {
     "status": "Success",
-    "message": "Friend request sent successfully."
+    "message": "Friend request sent successfully.",
+    "detail": {
+        "request_id": 1
+    }
 }
 ```
-**Sample Failure Response**:
+**Sample Failure Response (Status Code: 400 Bad Request)**:
 
 ```json
 {
@@ -266,20 +300,46 @@ The project is structured into several components:
     "message": "There is already an open friend request between you and this user."
 }
 ```
+**Sample Failure Response (Status Code: 429 Many Requests)**:
+
+```json
+{
+    "detail": "Request was throttled. Expected available in 48 seconds."
+}
+```
 ### Accept Friend Request
 
-**URL Endpoint**: `http://localhost:8000/api/friend-request/1/accept-request`
+**API Endpoint**: 
+```bash
+PATCH http://localhost:8000/api/friend-request/10
+```
 
 **Description**: This endpoint allows users to accept friend requests received from other users.
 
-**Sample Success Response**:
+**Sample Request Body**:
+
+```json
+{
+    "action": "accept-request"
+}
+```
+**Sample Success Response (Status Code: 200 OK)**:
 ```json
 {
     "status": "Success",
-    "message": "Friend request accepted successfully.."
+    "message": "Friend request accepted successfully.",
+    "detail": {
+        "user_id": 1,
+        "username": "yaseen",
+        "email": "yaseen3@gmail.com",
+        "date_of_birth": "1996-04-17",
+        "gender": "Male",
+        "interests": "coding",
+        "about": "Developer"
+    }
 }
 ```
-**Sample Failure Response**:
+**Sample Failure Response (Status Code: 400 Bad Request)**:
 
 ```json
 {
@@ -287,20 +347,39 @@ The project is structured into several components:
     "message": "Friend Request Not Found"
 }
 ```
+**Sample Failure Response (Status Code: 401 Unauthorized)**:
+
+```json
+{
+    "status": "Failure",
+    "message": "You are not authorized to perform this action."
+}
+```
 ### Reject Friend Request
 
-**URL Endpoint**: `http://localhost:8000/api/friend-request/1/reject-request`
+**API Endpoint**: 
+```bash
+PATCH http://localhost:8000/api/friend-request/10
+```
 
 **Description**: This endpoint allows users to reject friend requests received from other users.
 
-**Sample Success Response**:
+**Sample Request Body**:
+
+```json
+{
+    "action": "reject-request"
+}
+```
+
+**Sample Success Response (Status Code: 200 OK)**:
 ```json
 {
     "status": "Success",
     "message": "Friend request rejected successfully."
 }
 ```
-**Sample Failure Response**:
+**Sample Failure Response (Status Code: 400 Bad Request)**:
 
 ```json
 {
@@ -308,14 +387,24 @@ The project is structured into several components:
     "message": "Friend Request Not Found"
 }
 ```
+**Sample Failure Response (Status Code: 401 Unauthorized)**:
 
+```json
+{
+    "status": "Failure",
+    "message": "You are not authorized to perform this action."
+}
+```
 ### Accepted Friend Requests List
 
-**URL Endpoint**: `http://localhost:8000/api/friend-request/sent-accepted`
+**API Endpoint**: 
+```bash
+GET http://localhost:8000/api/friend-request/sent-accepted
+```
 
 **Description**: This endpoint lists users who have accepted their friend requests. Pagination is implemented with a page size of 10, so the API response will include up to 10 records per page.
 
-**Sample Success Response**:
+**Sample Success Response (Status Code: 200 OK)**:
 ```json
 {
     "count": 1,
@@ -323,12 +412,13 @@ The project is structured into several components:
     "previous": null,
     "results": [
         {
-            "request_created_at": "2023-08-27T15:42:48.411400Z",
-            "request_accepted_at": "2023-08-27T15:44:55.407670Z",
+            "request_id": 1,
+            "request_created_at": "2023-08-28 15:38:20",
+            "request_accepted_at": "2023-08-28 15:53:56",
             "to_user": {
-                "user_id": 1,
-                "username": "yaseen",
-                "email": "yaseen3@gmail.com"
+                "user_id": 2,
+                "username": null,
+                "email": "Ladarius_Rempel31@hotmail.com"
             }
         }
     ]
@@ -336,11 +426,14 @@ The project is structured into several components:
 ```
 ### Pending Friend Requests
 
-**URL Endpoint**: `http://localhost:8000/api/friend-request/received-pending`
+**API Endpoint**: 
+```bash
+GET http://localhost:8000/api/friend-request/received-pending
+```
 
 **Description**: This endpoint lists friend requests that users have received and are pending acceptance. Pagination is implemented with a page size of 10, so the API response will include up to 10 records per page.
 
-**Sample Success Response**:
+**Sample Success Response (Status Code: 200 OK)**:
 ```json
 {
     "count": 1,
@@ -348,11 +441,11 @@ The project is structured into several components:
     "previous": null,
     "results": [
         {
-            "request_created_at": "2023-08-27T16:17:00.111852Z",
+            "request_id": 11,
+            "request_created_at": "2023-08-28 04:35:51",
             "from_user": {
-                "user_id": 2,
-                "username": null,
-                "email": "Christiana_Nicolas@yahoo.com"
+                "user_id": 1,
+                "username": "yaseen"
             },
             "status": "sent",
             "days_since_updated": 0
