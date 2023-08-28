@@ -5,6 +5,7 @@ from rest_framework.viewsets import ViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.throttling import UserRateThrottle
+from rest_framework.pagination import PageNumberPagination
 # from rest_framework.pagination import PageNumberPagination
 from user.models import UserProfile
 from user.utils import generate_secure_password
@@ -13,7 +14,9 @@ from api.serializers import JWTPayloadSerializer, UserRegistrationSerializer, Se
 from user.jwt_utils import generate_jwt_token
 from django.contrib.auth import authenticate
 from django.db import IntegrityError
+from rest_framework.exceptions import PermissionDenied
 from api.authentication import JWTAuthentication
+from api.permissions import JWTPermission
 from api.pagination import CustomPagination
 from friends.models import FriendRequest
 
@@ -147,51 +150,98 @@ class UserOperationsViewSet(ViewSet):
 class FriendRequestViewSet(ViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    pagination_class = CustomPagination
+    pagination_class = PageNumberPagination
     pagination_class.page_size = 10
     pagination_class.max_page_size = 100
 
-    @action(detail=True, methods=['post'], url_path='send-request', throttle_classes=[UserRateThrottle])
-    def send_request(self, request, pk=None):
-        from_user = request.user.userprofile
-        to_user = UserProfile.objects.get(id=pk)
-        if from_user.has_friendship_with(to_user):
-            return Response({"status": "Failure", "message": "You are already connected with this user as a friend."},
+    def get_permission_class(self):
+        if self.action == 'partial_update':
+            return JWTPermission
+        return IsAuthenticated
+    
+    def get_serializer(self, *args, **kwargs):
+        if self.action == "sent_accepted_requests":
+            return SentAcceptedFriendRequestSerializer(*args, **kwargs)
+        if self.action == "received_pending_requests":
+            return ReceivedPendingRequestSerializer(*args, **kwargs)
+        if self.action == "partial_update":
+            return UserProfileSerializer(*args, **kwargs)
+        
+        return self.serializer_class(*args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        user_id = data.get("user_id")
+        if user_id:
+            from_user = request.user.userprofile
+            to_user = UserProfile.objects.get(id=user_id)
+            if from_user.has_friendship_with(to_user):
+                return Response({"status": "Failure", "message": "You are already connected with this user as a friend."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if FriendRequest.has_open_friend_request(from_user, to_user):
+                friend_request = FriendRequest.get_open_friend_requests(from_user, to_user).last()
+                return Response({"status": "Failure", "message": "There is already an open friend request between you and this user.", "detail": {"request_id": friend_request.id}},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            try:
+                friend_request = FriendRequest.objects.create(from_user=from_user, to_user=to_user)
+                return Response({"status": "Success", "message": "Friend request sent successfully.", "detail": {"request_id": friend_request.id}},
+                                status=status.HTTP_201_CREATED)
+            except Exception as e:
+                # logger
+                return Response({"status": "Failure", "message": "Something went wrong."},
+                    status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status": "Failure", "message": "user_id is mandatory to send friend request."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        if FriendRequest.has_open_friend_request(from_user, to_user):
-            return Response({"status": "Failure", "message": "There is already an open friend request between you and this user."},
-                status=status.HTTP_400_BAD_REQUEST
-            ) 
-        friend_request = FriendRequest.objects.create(from_user=from_user, to_user=to_user)
-        return Response({"status": "Success", "message": "Friend request sent successfully."}, status=status.HTTP_201_CREATED)
-
-    @action(detail=True, methods=['post'], url_path='accept-request')
-    def accept_request(self, request, pk=None):
-        from_user = UserProfile.objects.get(id=pk)
-        to_user = request.user.userprofile
+    
+    def accept_request(self, request, request_id):
         try:
-            friend_request = FriendRequest.objects.get(from_user=from_user, to_user=to_user, status="sent")
-        except Exception as e:
-            # loger
-            return Response({"status": "Failure", "message": "Friend Request Not Found"},status = status.HTTP_400_BAD_REQUEST)
-        friend_request.status = "accepted"
-        friend_request.save()
-        return Response({"status": "Success", "message": "Friend request accepted successfully.."}, status=status.HTTP_202_ACCEPTED)
+            to_user = request.user.userprofile
+            friend_request = FriendRequest.objects.get(id=request_id, status="sent")
+            from_user = friend_request.from_user
+            friend_request.status = "accepted"
+            friend_request.save()
+            serialiser = self.get_serializer(from_user)
+            return Response({"status": "Success", "message": "Friend request accepted successfully.", "detail":serialiser.data}, status=status.HTTP_200_OK)
+        except FriendRequest.DoesNotExist as e:
+            return Response({"status": "Failure", "message": "Friend Request Not Found"},status = status.HTTP_400_BAD_REQUEST)        
 
-    @action(detail=True, methods=['post'], url_path='reject-request')
-    def reject_request(self, request, pk=None):
+    def reject_request(self, request, request_id):
         # TO DO: block user and reject request
-        from_user = UserProfile.objects.get(id=pk)
-        to_user = request.user.userprofile
         try:
-            friend_request = FriendRequest.objects.get(from_user=from_user, to_user=to_user, status="sent")
-        except Exception as e:
-            # logger
+            to_user = request.user.userprofile
+            friend_request = FriendRequest.objects.get(id=request_id, status="sent")
+            from_user = friend_request.from_user
+            friend_request.status = "rejected"
+            friend_request.save()
+            return Response({"status": "Success", "message": "Friend request rejected successfully."}, status=status.HTTP_202_ACCEPTED)
+        except FriendRequest.DoesNotExist as e:
             return Response({"status": "Failure", "message": "Friend Request Not Found"},status = status.HTTP_400_BAD_REQUEST)
-        friend_request.status = "rejected"
-        friend_request.save()
-        return Response({"status": "Success", "message": "Friend request rejected successfully."}, status=status.HTTP_202_ACCEPTED)
+
+    def partial_update(self, request, pk=None):
+        data = request.data
+        update_action = data.get("action")
+        if update_action:
+            request_id = pk
+            permission_class = self.get_permission_class()
+            try:
+                if permission_class.has_permission(permission_class, request, self, data={"action":"recieved-friend-request", "request_id": request_id}):
+                    if update_action == "accept-request":
+                        return self.accept_request(request, request_id)
+                    if update_action == "reject-request":
+                        return self.reject_request(request, request_id)
+                return Response({"status": "Failure", "message": "You are not authorized to perform this action."},
+                    status=status.HTTP_401_UNAUTHORIZED)
+            except FriendRequest.DoesNotExist as e:
+                return Response({"status": "Failure", "message": "Friend Request Not Found"},status = status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                # logger
+                return Response({"status": "Failure", "message": "Something went wrong."},
+                                status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status": "Failure", "message": "Couldn't find any action to perform."},
+                status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=["get"], url_path="sent-accepted")
     def sent_accepted_requests(self, request):
@@ -200,7 +250,7 @@ class FriendRequestViewSet(ViewSet):
 
         paginator = self.pagination_class()
         paginated_queryset = paginator.paginate_queryset(accepted_friend_requests, request)
-        serializer = SentAcceptedFriendRequestSerializer(paginated_queryset, many=True)
+        serializer = self.get_serializer(paginated_queryset, many=True)
         return paginator.get_paginated_response(serializer.data)
     
     @action(detail=False, methods=["get"], url_path="received-pending")
@@ -210,7 +260,7 @@ class FriendRequestViewSet(ViewSet):
 
         paginator = self.pagination_class()
         paginated_queryset = paginator.paginate_queryset(pending_friend_requests, request)
-        serializer = ReceivedPendingRequestSerializer(paginated_queryset, many=True)
+        serializer = self.get_serializer(paginated_queryset, many=True)
         return paginator.get_paginated_response(serializer.data)
 
 #TO DO: UNFRIEND, UNFRIEND AND BLOCK 

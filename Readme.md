@@ -113,7 +113,7 @@ The project is structured into several components:
 ```
 ### Change User Password
 
-**URL Endpoint**: `http://localhost:8000/api/user/change-passwsord`
+**URL Endpoint**: `http://localhost:8000/api/user/change-password`
 
 **Description**: This endpoint allows users to change their account password using the JWT token received during signup or login. This new password will allow users to log in to the system after the authentication token has expired.
 

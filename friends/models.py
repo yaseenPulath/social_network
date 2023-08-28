@@ -15,8 +15,6 @@ class FriendRequest(Timestamped):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='sent')
     active = models.BooleanField(default=True)
 
-    class Meta:
-        unique_together = ('from_user', 'to_user', 'status', "active")
 
     def __str__(self):
         return f"To: {self.to_user.user.email}({self.status})"

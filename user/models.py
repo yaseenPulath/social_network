@@ -68,7 +68,7 @@ class UserProfile(Timestamped):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     username = models.CharField(max_length=100, blank=True, null=True, db_index=True)
-    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
+    profile_picture = models.URLField(blank=True, null=True)
     date_of_birth = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, null=True, db_index=True)
     interests = models.TextField(blank=True, null=True)

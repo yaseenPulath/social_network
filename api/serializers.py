@@ -84,29 +84,37 @@ class UserProfileSerializer(serializers.ModelSerializer):
             validate_user_age(date_of_birth)
         return data
 
-class UserProfileFriendRquestSerializer(serializers.ModelSerializer):
+class UserProfileAcceptedFriendRquestSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source="id", read_only=True)
     email = serializers.EmailField(source='user.email', required=False)
     class Meta:
         model = UserProfile
         fields = ["user_id", "username", "email"]
 
+class UserProfilePendingFriendRquestSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(source="id", read_only=True)
+    class Meta:
+        model = UserProfile
+        fields = ["user_id", "username"]
+
 
 class SentAcceptedFriendRequestSerializer(serializers.ModelSerializer):
-    request_created_at = serializers.DateTimeField(source="created_at")
-    request_accepted_at = serializers.DateTimeField(source="updated_at")
-    to_user = UserProfileFriendRquestSerializer(read_only=True)
+    request_id = serializers.IntegerField(source="id")
+    request_created_at = serializers.DateTimeField(source="created_at",format="%Y-%m-%d %H:%M:%S")
+    request_accepted_at = serializers.DateTimeField(source="updated_at", format="%Y-%m-%d %H:%M:%S")
+    to_user = UserProfileAcceptedFriendRquestSerializer(read_only=True)
     class Meta:
         model = FriendRequest
-        fields = ["request_created_at", "request_accepted_at", "to_user"]
+        fields = ["request_id", "request_created_at", "request_accepted_at", "to_user"]
 
 class ReceivedPendingRequestSerializer(serializers.ModelSerializer):
-    request_created_at = serializers.DateTimeField(source="created_at")
-    from_user = UserProfileFriendRquestSerializer(read_only=True)
+    request_id = serializers.IntegerField(source="id")
+    request_created_at = serializers.DateTimeField(source="created_at", format="%Y-%m-%d %H:%M:%S")
+    from_user = UserProfilePendingFriendRquestSerializer(read_only=True)
     days_since_updated = serializers.SerializerMethodField()
     class Meta:
         model = FriendRequest
-        fields = ["request_created_at", "from_user", "status", "days_since_updated"]
+        fields = ["request_id", "request_created_at", "from_user", "status", "days_since_updated"]
 
     def get_days_since_updated(self, instance):
         if instance.updated_at:
