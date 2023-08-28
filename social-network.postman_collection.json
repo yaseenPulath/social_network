@@ -35,7 +35,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"email\": \"yaseen45@gmail.com\"\n}",
+					"raw": "{\n    \"email\": \"{{$randomEmail}}\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -66,7 +66,7 @@
 					"bearer": [
 						{
 							"key": "token",
-							"value": "{{JWTToken-18}}",
+							"value": "{{JWTToken-1}}",
 							"type": "string"
 						}
 					]
@@ -75,7 +75,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"password\": \"new_password1\"\n}",
+					"raw": "{\n    \"password\": \"newpassword\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -107,7 +107,7 @@
 					"bearer": [
 						{
 							"key": "token",
-							"value": "{{JWTToken-17}}",
+							"value": "{{JWTToken-1}}",
 							"type": "string"
 						}
 					]
@@ -116,7 +116,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"username\": \"yaseen\",\n    \"password\": \"newpassword\",\n    \"date_of_birth\": \"1996-04-17\",\n    \"gender\": \"Male\",\n    \"interests\": \"coding\",\n    \"about\": \"Developer\"\n}",
+					"raw": "{\n    \"username\": \"yaseen\",\n    \"password\": \"newpassword\",\n    \"date_of_birth\": \"2022-04-17\",\n    \"gender\": \"Male\",\n    \"interests\": \"coding\",\n    \"about\": \"Developer\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -169,7 +169,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"email\": \"yaseen3@gmail.com\",\n    \"password\": \"new_password1\"\n}",
+					"raw": "{\n    \"email\": \"yaseen@gmail.com\",\n    \"password\": \"newpasswoard\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -247,7 +247,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"user_id\" : 9\n}",
+					"raw": "{\n    \"user_id\" : 6\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -255,7 +255,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:8000/api/friend-request",
+					"raw": "http://localhost:8000/api/friend-request/sent-acceptead",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -263,7 +263,8 @@
 					"port": "8000",
 					"path": [
 						"api",
-						"friend-request"
+						"friend-request",
+						"sent-acceptead"
 					]
 				}
 			},
@@ -277,7 +278,7 @@
 					"bearer": [
 						{
 							"key": "token",
-							"value": "{{JWTToken-4}}",
+							"value": "{{JWTToken-2}}",
 							"type": "string"
 						}
 					]
@@ -294,7 +295,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:8000/api/friend-request/10",
+					"raw": "http://localhost:8000/api/friend-request/1",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -303,7 +304,7 @@
 					"path": [
 						"api",
 						"friend-request",
-						"10"
+						"1"
 					]
 				}
 			},
@@ -317,7 +318,7 @@
 					"bearer": [
 						{
 							"key": "token",
-							"value": "{{JWTToken-4}}",
+							"value": "{{JWTToken-1}}",
 							"type": "string"
 						}
 					]
@@ -334,7 +335,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:8000/api/friend-request/10",
+					"raw": "http://localhost:8000/api/friend-request/3",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -343,7 +344,7 @@
 					"path": [
 						"api",
 						"friend-request",
-						"10"
+						"3"
 					]
 				}
 			},

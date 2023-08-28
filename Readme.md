@@ -2,6 +2,18 @@
 
 This project implements a social networking application API using Django Rest Framework. The API offers a range of functionalities for user management and friend requests. Below are the details of the implemented functionalities and the overall structure of the project.
 
+`Except for the registration and login endpoints, you'll need to include the JWTAuth token in your requests. This token ensures proper authentication and access to secured functionalities. 
+For the Authorization Type, select Bearer Token.
+In the Token field, use the JWTAuth token`
+## Easy Evaluation with Postman Collection
+
+have included a Postman collection in this repo for testing our API endpoints. It's designed for quick and efficient evaluation.
+
+
+## Seamless Authentication
+
+Our collection includes an automation script that sets ``JWTToken-<userid>`` variables in tests. No need to copy-paste tokens. Just remember the user IDs for smooth authorization. To utilize this, choose the Bearer Token as the authentication type and use ``{{JWTToken-<userid>}}`` in the token field.
+
 ## Getting Started
 
 To set up the project locally, follow these steps:
@@ -175,7 +187,6 @@ POST http://localhost:8000/api/user/login
         "email": "user@example.com"
     }
 }
-
 ```
 **Sample Failure Response (Status Code: 400 Bad Request)**:
 
@@ -311,7 +322,7 @@ POST http://localhost:8000/api/friend-request
 
 **API Endpoint**: 
 ```bash
-PATCH http://localhost:8000/api/friend-request/10
+PATCH http://localhost:8000/api/friend-request/<request_id>
 ```
 
 **Description**: This endpoint allows users to accept friend requests received from other users.
@@ -359,7 +370,7 @@ PATCH http://localhost:8000/api/friend-request/10
 
 **API Endpoint**: 
 ```bash
-PATCH http://localhost:8000/api/friend-request/10
+PATCH http://localhost:8000/api/friend-request/<request_id>
 ```
 
 **Description**: This endpoint allows users to reject friend requests received from other users.
