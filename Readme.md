@@ -251,7 +251,8 @@ PATCH http://localhost:8000/api/user/profile/update-profile
 ### Search for Other Profiles
 
 **API Endpoint**:
- ```bash
+
+```bash
 GET http://localhost:8000/api/user/profile/search?email=gmail
 ```
 
@@ -274,7 +275,6 @@ GET http://localhost:8000/api/user/profile/search?email=gmail
     ],
     "is_exact_match": false
 }
-
 ```
 
 ### Send Friend Request
