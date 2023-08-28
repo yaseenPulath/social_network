@@ -4,7 +4,6 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
-from rest_framework.throttling import UserRateThrottle
 from rest_framework.pagination import PageNumberPagination
 # from rest_framework.pagination import PageNumberPagination
 from user.models import UserProfile
@@ -18,6 +17,7 @@ from rest_framework.exceptions import PermissionDenied
 from api.authentication import JWTAuthentication
 from api.permissions import JWTPermission
 from api.pagination import CustomPagination
+from api.throttles import FriendRequestThrottle
 from friends.models import FriendRequest
 
 class UserRegistrationView(APIView):
@@ -89,6 +89,7 @@ class UserOperationsViewSet(ViewSet):
         if new_password:
             user = request.user
             user.set_password(new_password)
+            user.is_registration_completed = True
             user.save()
             return Response({"status": "Success", "message": "Password changed successfully."})
         else:
@@ -150,6 +151,7 @@ class UserOperationsViewSet(ViewSet):
 class FriendRequestViewSet(ViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    throttle_classes = [FriendRequestThrottle]
     pagination_class = PageNumberPagination
     pagination_class.page_size = 10
     pagination_class.max_page_size = 100

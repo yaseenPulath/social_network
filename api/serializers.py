@@ -61,6 +61,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             user.email = email
         if password:
             user.set_password(password)
+            user.is_registration_completed = True
         user.save()
         userprofile = UserProfile.objects.get(id=instance.id)
         validated_data['user'] = user
