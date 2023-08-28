@@ -26,6 +26,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'email']
 
+class UserSearchSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(source="id", read_only=True)
+    class Meta:
+        model = UserProfile
+        fields = [
+            "user_id", "username", "interests", "about"
+        ]
+
 class UserProfileSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source="id", read_only=True)
     email = serializers.EmailField(source='user.email', required=False)

@@ -3,8 +3,9 @@ from api.views import UserRegistrationView, UserLoginView,\
     UserOperationsViewSet, FriendRequestViewSet
 from rest_framework.routers import DefaultRouter
 
+
 router = DefaultRouter(trailing_slash=False)
-router.register(r'user', UserOperationsViewSet, basename='user')
+router.register(r'user/profile', UserOperationsViewSet, basename='user/profile')
 router.register(r'friend-request', FriendRequestViewSet, basename='friend-request')
 
 urlpatterns = [

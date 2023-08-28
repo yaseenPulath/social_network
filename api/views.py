@@ -5,15 +5,16 @@ from rest_framework.viewsets import ViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.throttling import UserRateThrottle
-from rest_framework.pagination import PageNumberPagination
+# from rest_framework.pagination import PageNumberPagination
 from user.models import UserProfile
 from user.utils import generate_secure_password
 from api.serializers import JWTPayloadSerializer, UserRegistrationSerializer, SentAcceptedFriendRequestSerializer, \
-    ReceivedPendingRequestSerializer, UserProfileSerializer
+    ReceivedPendingRequestSerializer, UserProfileSerializer, UserSearchSerializer
 from user.jwt_utils import generate_jwt_token
 from django.contrib.auth import authenticate
 from django.db import IntegrityError
 from api.authentication import JWTAuthentication
+from api.pagination import CustomPagination
 from friends.models import FriendRequest
 
 class UserRegistrationView(APIView):
@@ -67,27 +68,19 @@ class UserOperationsViewSet(ViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     queryset = UserProfile.objects.all()
-    pagination_class = PageNumberPagination
+    serializer_class = UserProfileSerializer
+    pagination_class = CustomPagination
     pagination_class.page_size = 10
     pagination_class.max_page_size = 100
 
+
     def get_serializer(self, *args, **kwargs):
-        if self.action in ['search_users', 'update_profile']:
-            return UserProfileSerializer(*args, **kwargs)
-        return super().get_serializer(*args, **kwargs)
+        if self.action == "retrieve":
+            return UserSearchSerializer(*args, **kwargs)
+        return self.serializer_class(*args, **kwargs)
+        
 
-    @action(detail=False, methods=['patch'], url_path='update-profile')
-    def update_profile(self, request):
-        data = self.request.data
-        user_profile = request.user.userprofile
-        serializer = self.get_serializer(user_profile, data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"status": "Success", "message": "Profile updated successfully.", **serializer.data})
-        return Response({"status": "Failure", "Errors": serializer.errors, "message": "Please provide a valid data"})
-
-    @action(detail=False, methods=['patch'], url_path='change-password')
-    def change_password(self, request   ):
+    def change_password(self, request):
         data = request.data
         new_password = data.get("password")
         if new_password:
@@ -101,39 +94,60 @@ class UserOperationsViewSet(ViewSet):
                 "message": "password can't me empty"
             }, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=False, methods=['get'], url_path='search-users', permission_classes=[IsAuthenticated])
-    def search_users(self, request):
+    def update_profile(self, request):
+        data = self.request.data
+        user_profile = request.user.userprofile
+        serializer = self.get_serializer(user_profile, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"status": "Success", "message": "Profile updated successfully.", **serializer.data})
+        return Response({"status": "Failure", "Errors": serializer.errors, "message": "Please provide a valid data"})
+
+
+    def partial_update(self, request, pk):
+        '''
+        used for change password and update profile
+        '''
+        action = pk
+        if action == "change-password":
+            return self.change_password(self.request)
+        if action == "update-profile":
+            return self.update_profile(self.request)
+
+
+    def retrieve(self, request, pk, *args, **kwargs):
+        '''
+        to search users
+        '''
         email = request.query_params.get('email', '')
         name = request.query_params.get('name', '')
         request_user = request.user
 
         queryset = UserProfile.objects.none()
-        is_exact_match = True
+        match_detail = {}
         if email:
+            match_detail["is_exact_match"] = True
             queryset = UserProfile.objects.filter(user__email=email).exclude(user__id=request_user.id)
             if not queryset.exists():
-                is_exact_match = False
+                match_detail["is_exact_match"] = False
                 queryset = UserProfile.objects.filter(user__email__icontains=email).exclude(user__id=request_user.id)
         elif name:
+            match_detail["is_exact_match"] = True
             queryset = UserProfile.objects.filter(user_name=name).exclude(user__id=request_user.id)
             if not queryset.exists():
-                is_exact_match = False
+                match_detail["is_exact_match"] = False
                 queryset = UserProfile.objects.filter(user_name__icontains=name).exclude(user__id=request_user.id)
-        if is_exact_match:
-            instance = queryset.last()
-            serializer = self.get_serializer(instance)
-        else:
-            paginator = self.pagination_class()
-            paginated_queryset = paginator.paginate_queryset(queryset, request)
-            serializer = self.get_serializer(paginated_queryset, many=True)
-            return paginator.get_paginated_response(serializer.data)
-        return Response(serializer.data)
+        
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = self.get_serializer(paginated_queryset, many=True)
+        return paginator.get_paginated_response(serializer.data, match_detail)
 
 
 class FriendRequestViewSet(ViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    pagination_class = PageNumberPagination
+    pagination_class = CustomPagination
     pagination_class.page_size = 10
     pagination_class.max_page_size = 100
 
