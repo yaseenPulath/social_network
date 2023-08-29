@@ -4,13 +4,17 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+    environment:
+      WAIT_HOSTS: db:3306
+      WAIT_HOSTS_TIMEOUT: 300
+      WAIT_SLEEP_INTERVAL: 10
     volumes:
       - .:/srv/www/social_network
     ports:
       - 8000:3000
     depends_on:
       - db
-    command: sh -c "sleep 10 && python manage.py migrate --noinput && sleep 10 && python manage.py runserver 0.0.0.0:3000"
+    command: sh -c "/wait && python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:3000"
 
   db:
     image: mysql:8.0.23
